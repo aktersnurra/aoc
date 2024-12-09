@@ -16,16 +16,19 @@ type AocToken = String
 addUserAgent :: Request -> Request
 addUserAgent = addRequestHeader hUserAgent "gustaf+aoc@gustafrydholm.xyz"
 
-addAocCookie :: String -> Request -> Request
-addAocCookie aocToken = addRequestHeader hCookie cookie
+addAocCookie :: AocToken -> Request -> Request
+addAocCookie token = addRequestHeader hCookie cookie
   where
-    cookie = fromString $ "session=" ++ aocToken
+    cookie = fromString $ "session=" ++ token
 
 addAccept :: Request -> Request
 addAccept = addRequestHeader hAccept "text/plain"
 
 addContentType :: Request -> Request
 addContentType = addRequestHeader hContentType "application/x-www-form-urlencoded"
+
+aocDefaultRequest :: AocToken -> Request
+aocDefaultRequest token = setRequestHost "adventofcode.com" $ addUserAgent $ addAocCookie token defaultRequest
 
 -- parse year
 -- parse day
@@ -58,8 +61,8 @@ execute request = do
 
 main :: IO ()
 main = do
-    aocToken <- getEnv "AOC_TOKEN"
-    let request = setRequestHost "adventofcode.com" $ addUserAgent $ addAocCookie aocToken defaultRequest
+    token <- getEnv "AOC_TOKEN"
+    let request = setRequestHost "adventofcode.com" $ addUserAgent $ addAocCookie token defaultRequest
     (opts :: Opts) <- execParser optsParser
     case optCommand opts of
         Input year day -> execute $ inputRequest request year day
