@@ -36,23 +36,25 @@ aocDefaultRequest token = setRequestHost "adventofcode.com" $ addUserAgent $ add
 
 inputRequest :: Request -> Year -> Day -> Request
 inputRequest baseRequest year day = do
-  let path = fromString $ "/" ++ year ++ "/day/" ++ day ++ "/input"
   setRequestPath path $
     setRequestMethod
       "GET"
       baseRequest
+ where
+  path = fromString $ "/" ++ year ++ "/day/" ++ day ++ "/input"
 
 -- TODO: parse html for the response
 submitRequest :: Request -> Year -> Day -> Part -> Answer -> Request
 submitRequest baseRequest year day part answer = do
-  let path = fromString $ "/" ++ year ++ "/day/" ++ day ++ "/answer"
-  let content = L8.pack $ "level=" ++ part ++ "&answer=" ++ answer
   setRequestBodyLBS content $
     setRequestPath path $
       setRequestMethod "POST" $
         addAccept $
           addContentType
             baseRequest
+ where
+  path = fromString $ "/" ++ year ++ "/day/" ++ day ++ "/answer"
+  content = L8.pack $ "level=" ++ part ++ "&answer=" ++ answer
 
 execute :: Request -> IO ()
 execute request = do
