@@ -12,9 +12,10 @@ import Options.Applicative
 import System.Environment (getEnv)
 
 type AocToken = String
+type UserAgent = String
 
-addUserAgent :: Request -> Request
-addUserAgent = addRequestHeader hUserAgent "gustaf+aoc@gustafrydholm.xyz"
+addUserAgent :: UserAgent -> Request -> Request
+addUserAgent userAgent = addRequestHeader hUserAgent (read userAgent)
 
 addAocCookie :: AocToken -> Request -> Request
 addAocCookie token = addRequestHeader hCookie cookie
@@ -27,12 +28,11 @@ addAccept = addRequestHeader hAccept "text/plain"
 addContentType :: Request -> Request
 addContentType = addRequestHeader hContentType "application/x-www-form-urlencoded"
 
-aocDefaultRequest :: AocToken -> Request
-aocDefaultRequest token = setRequestHost "adventofcode.com" $ addUserAgent $ addAocCookie token defaultRequest
-
--- parse year
--- parse day
--- parse answer
+aocDefaultRequest :: AocToken -> UserAgent -> Request
+aocDefaultRequest token userAgent =
+  setRequestHost "adventofcode.com" $
+    addUserAgent userAgent $
+      addAocCookie token defaultRequest
 
 inputRequest :: Request -> Year -> Day -> Request
 inputRequest baseRequest year day = do
@@ -43,7 +43,6 @@ inputRequest baseRequest year day = do
  where
   path = fromString $ "/" ++ year ++ "/day/" ++ day ++ "/input"
 
--- TODO: parse html for the response
 submitRequest :: Request -> Year -> Day -> Part -> Answer -> Request
 submitRequest baseRequest year day part answer = do
   setRequestBodyLBS content $
@@ -59,12 +58,13 @@ submitRequest baseRequest year day part answer = do
 execute :: Request -> IO ()
 execute request = do
   response <- httpLBS request
-  L8.putStrLn $ getResponseBody response
+  L8.putStr . getResponseBody $ response
 
 main :: IO ()
 main = do
   token <- getEnv "AOC_TOKEN"
-  let request = setRequestHost "adventofcode.com" $ addUserAgent $ addAocCookie token defaultRequest
+  userAgent <- getEnv "AOC_USER_AGENT"
+  let request = aocDefaultRequest token userAgent
   (opts :: Opts) <- execParser optsParser
   case optCommand opts of
     Input year day -> execute $ inputRequest request year day
